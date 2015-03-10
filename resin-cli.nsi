@@ -34,17 +34,22 @@ Section "Install"
 	File "build\node-x86.msi"
 	File "build\node-x64.msi"
 
-  ; Check that node is already installed
-  SearchPath $R0 "node.exe"
-  StrCmp $R0 "" install_node done
+	; Check that node is already installed
+	SearchPath $R0 "node.exe"
+	StrCmp $R0 "" install_node done
 
 install_node:
 
+	ClearErrors
+
+	; We need to provide a custom installation directory here
+	; in order to be able to inject the path to node.exe dynamically
+	; to the installer, otherwise we have no ways of running npm install.
 	${If} ${RunningX64}
-		ExecWait '"msiexec" /i "$INSTDIR\node-x64.msi" /passive'
+		ExecWait '"msiexec" /i "$INSTDIR\node-x64.msi" INSTALLDIR="$INSTDIR\nodejs" /passive'
 		IfErrors installer_error
 	${Else}
-		ExecWait '"msiexec" /i "$INSTDIR\node-x86.msi" /passive'
+		ExecWait '"msiexec" /i "$INSTDIR\node-x86.msi" INSTALLDIR="$INSTDIR\nodejs" /passive'
 		IfErrors installer_error
 	${EndIf}
 
@@ -65,6 +70,7 @@ done:
 	StrCpy $R0 "$R0;$INSTDIR\nodejs"
 	System::Call 'Kernel32::SetEnvironmentVariableA(t, t) i("PATH", R0).r0'
 
+	ClearErrors
 	ExecWait "npm install -g resin-cli"
 	IfErrors installer_error
 
