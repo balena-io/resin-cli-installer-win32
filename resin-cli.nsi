@@ -41,10 +41,10 @@ Section "Install"
 install_node:
 
 	${If} ${RunningX64}
-		ExecWait '"msiexec" /i "$INSTDIR\node-x64.msi" INSTALLDIR="$INSTDIR\nodejs" /passive'
+		ExecWait '"msiexec" /i "$INSTDIR\node-x64.msi" /passive'
 		IfErrors installer_error
 	${Else}
-		ExecWait '"msiexec" /i "$INSTDIR\node-x86.msi" INSTALLDIR="$INSTDIR\nodejs" /passive'
+		ExecWait '"msiexec" /i "$INSTDIR\node-x86.msi" /passive'
 		IfErrors installer_error
 	${EndIf}
 
