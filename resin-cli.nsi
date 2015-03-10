@@ -34,6 +34,12 @@ Section "Install"
 	File "build\node-x86.msi"
 	File "build\node-x64.msi"
 
+  ; Check that node is already installed
+  SearchPath $R0 "node.exe"
+  StrCmp $R0 "" install_node done
+
+install_node:
+
 	${If} ${RunningX64}
 		ExecWait '"msiexec" /i "$INSTDIR\node-x64.msi" INSTALLDIR="$INSTDIR\nodejs" /passive'
 		IfErrors installer_error
