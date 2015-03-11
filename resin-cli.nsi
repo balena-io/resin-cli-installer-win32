@@ -29,56 +29,65 @@ InstallDir "$PROGRAMFILES\Resin.io\resin-cli"
 !insertmacro MUI_LANGUAGE "English"
 
 Section "Install"
-	SetOutPath $INSTDIR
+  SetOutPath $INSTDIR
 
-	File "build\node-x86.msi"
-	File "build\node-x64.msi"
+  File "build\node-x86.msi"
+  File "build\node-x64.msi"
 
-	; Check that node is already installed
-	SearchPath $R0 "node.exe"
-	StrCmp $R0 "" install_node done
+  ; Check that node is already installed
+  SearchPath $R0 "node.exe"
+  StrCmp $R0 "" install_node done
 
 install_node:
 
-	ClearErrors
+  ClearErrors
 
-	; We need to provide a custom installation directory here
-	; in order to be able to inject the path to node.exe dynamically
-	; to the installer, otherwise we have no ways of running npm install.
-	${If} ${RunningX64}
-		ExecWait '"msiexec" /i "$INSTDIR\node-x64.msi" INSTALLDIR="$INSTDIR\nodejs" /passive'
-		IfErrors installer_error
-	${Else}
-		ExecWait '"msiexec" /i "$INSTDIR\node-x86.msi" INSTALLDIR="$INSTDIR\nodejs" /passive'
-		IfErrors installer_error
-	${EndIf}
+  ; We need to provide a custom installation directory here
+  ; in order to be able to inject the path to node.exe dynamically
+  ; to the installer, otherwise we have no ways of running npm install.
+  ${If} ${RunningX64}
+    ExecWait '"msiexec" /i "$INSTDIR\node-x64.msi" INSTALLDIR="$INSTDIR\nodejs" /passive'
+    IfErrors installer_error
+  ${Else}
+    ExecWait '"msiexec" /i "$INSTDIR\node-x86.msi" INSTALLDIR="$INSTDIR\nodejs" /passive'
+    IfErrors installer_error
+  ${EndIf}
 
-	goto done
+  goto done
 
 installer_error:
-	Abort
+  Abort
 
 done:
-	Delete "$INSTDIR\node-x64.msi"
-	Delete "$INSTDIR\node-x86.msi"
+  Delete "$INSTDIR\node-x64.msi"
+  Delete "$INSTDIR\node-x86.msi"
 
-	${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR\nodejs"
+  ${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR\nodejs"
 
-	; Update PATH within the installer, so we can proceed with calling npm
-	; http://nsis.sourceforge.net/Setting_Environment_Variables_to_Active_Installer_Process
-	ReadEnvStr $R0 "PATH"
-	StrCpy $R0 "$R0;$INSTDIR\nodejs"
-	System::Call 'Kernel32::SetEnvironmentVariableA(t, t) i("PATH", R0).r0'
+  ; Update PATH within the installer, so we can proceed with calling npm
+  ; http://nsis.sourceforge.net/Setting_Environment_Variables_to_Active_Installer_Process
+  ReadEnvStr $R0 "PATH"
+  StrCpy $R0 "$R0;$INSTDIR\nodejs"
+  System::Call 'Kernel32::SetEnvironmentVariableA(t, t) i("PATH", R0).r0'
 
-	ClearErrors
-	ExecWait "npm install -g resin-cli"
-	IfErrors installer_error
+  ClearErrors
+  ExecWait "npm install -g resin-cli"
+  IfErrors installer_error
 
-	WriteUninstaller "$INSTDIR\Uninstall.exe"
+  ; Add registry entries
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ResinCLI" "DisplayName" "Resin CLI"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ResinCLI" "UninstallString" "$\"$INSTDIR\Uninstall.exe$\""
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ResinCLI" "Publisher" "Resin.io"
+
+  File "images/logo.ico"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ResinCLI" "DisplayIcon" "$\"$INSTDIR\logo.ico$\""
+
+  WriteUninstaller "$INSTDIR\Uninstall.exe"
 SectionEnd
 
 Section "Uninstall"
-	ExecWait "npm uninstall -g resin-cli"
-	${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR\nodejs"
-	RMDir /r "$INSTDIR"
+  ExecWait "npm uninstall -g resin-cli"
+  ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR\nodejs"
+  RMDir /r "$INSTDIR"
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ResinCLI"
 SectionEnd
