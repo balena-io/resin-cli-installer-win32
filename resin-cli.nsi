@@ -71,7 +71,7 @@ done:
   System::Call 'Kernel32::SetEnvironmentVariableA(t, t) i("PATH", R0).r0'
 
   ClearErrors
-  ExecWait "npm install -g resin-cli"
+  ExecWait "npm.cmd install -g resin-cli"
   IfErrors installer_error
 
   ; Add registry entries
@@ -86,7 +86,7 @@ done:
 SectionEnd
 
 Section "Uninstall"
-  ExecWait "npm uninstall -g resin-cli"
+  ExecWait "npm.cmd uninstall -g resin-cli"
   ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR\nodejs"
   RMDir /r "$INSTDIR"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ResinCLI"
